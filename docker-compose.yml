@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 前端服务
+  frontend:
+    build: ./frontend
+    container_name: file-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    environment:
+      VUE_APP_API_BASE_URL: /api
+      VUE_APP_API_KEY: ${FRONTEND_API_KEY}
+  
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: file-backend
+    restart: always
+    volumes:
+      - ./backend/uploads:/app/uploads
+    environment:
+      UPLOAD_FOLDER: /app/uploads
+      MAX_FILE_SIZE: 10737418240   # 10GB
+      CHUNK_SIZE: 104857600        # 100MB
+      ADMIN_USER: admin
+      ADMIN_PASS: ${ADMIN_PASSWORD}
+      API_SECRET_KEY: ${BACKEND_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+  
+  # 数据库服务（可选）
+  db:
+    image: postgres:14
+    container_name: file-db
+    environment:
+      POSTGRES_USER: fileadmin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: file_sharing
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fileadmin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg-data:
